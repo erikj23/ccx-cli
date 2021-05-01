@@ -3,7 +3,7 @@ Function Get-ResourceAccounts {
   [CmdletBinding()]
   param
   (
-    [ValidateSet('AWS', 'Azure')]
+    [ValidateSet([Provider])]
     [String]$Provider = 'AWS',
 
     [String]$RootAccount = 'manage'
@@ -20,7 +20,7 @@ Set-Alias -Name accounts -Value Get-ResourceAccounts
 Function Get-ResourceAccountsCache {
   param
   (
-    [ValidateSet('AWS', 'Azure')]
+    [ValidateSet([Provider])]
     [String]$Provider,
 
     [String]$RootAccount = 'manage'

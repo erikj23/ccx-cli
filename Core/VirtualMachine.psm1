@@ -1,7 +1,7 @@
 
 Function Set-VirtualMachineState  {
   param(
-    [ValidateSet('AWS', 'Azure')]
+    [ValidateSet([Provider])]
     [String]$Provider = 'AWS',
 
     [Alias('r')]

@@ -20,7 +20,7 @@
   ModuleVersion          = '1.0.0.0'
 
   # ID used to uniquely identify this module
-  GUID                   = '82acf7c2-309c-4708-bca5-b998a358f990'
+  GUID                   = '30f5c130-1144-46ec-9d41-c7b4e09c4f6b'
 
   # Author of this module
   Author                 = 'Erik Maldonado'
@@ -64,7 +64,10 @@
 
   # Script files (.ps1) that are run in the caller's environment prior to
   # importing this module
-  ScriptsToProcess       = @('Scripts/Cache.ps1')
+  ScriptsToProcess       = @(
+    'Scripts/Cache.ps1'
+    'Scripts/Type.ps1'
+  )
 
   # Type files (.ps1xml) to be loaded when importing this module
   TypesToProcess         = @()
@@ -75,12 +78,11 @@
   # Modules to import as nested modules of the module specified in
   # ModuleToProcess
   NestedModules          = @(
-    'Support/Certificate.psm1'
-    'Support/Common.psm1'
-    'Support/Format.psm1'
-    'Support/Organization.psm1'
-    'Support/Utility.psm1'
-    'Support/VirtualMachine.psm1'
+    'Core/Certificate.psm1'
+    'Core/Common.psm1'
+    'Core/Organization.psm1'
+    'Core/Resource.psm1'
+    'Core/VirtualMachine.psm1'
   )
 
   # Functions to export from this module
