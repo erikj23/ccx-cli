@@ -1,23 +1,27 @@
 
-Enum eResourceType {
-  VirtualMachine
-  BlockStorage
+Enum ResourceTypes {
+  VirtualMachine=1
+  vm=1
+  BlockStorage = 2
+  block=2
+  ObjectStorage=3
+  object=3
 }
 
 Class ResourceType : System.Management.Automation.IValidateSetValuesGenerator {  
   [String[]] GetValidValues() {          
-    return [eResourceType].GetEnumNames()
+    return [ResourceTypes].GetEnumNames()
   }
 }
 
-Enum eProvider {
+Enum Providers {
   AWS
   Azure
 }
 
 Class Provider : System.Management.Automation.IValidateSetValuesGenerator {  
   [String[]] GetValidValues() {          
-    return [eProvider].GetEnumNames()
+    return [Providers].GetEnumNames()
   }
 }
 

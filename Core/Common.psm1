@@ -87,19 +87,40 @@ Function Invoke-CommonGet {
 }
 
 Function Invoke-CommonGetHelp {
-
-          $HelpFilters = aws ec2 describe-instances help |
-            Select-String '^   \* "(.+)" -' | Select-Object -ExpandProperty Matches |
-            Select-Object -ExpandProperty Groups | Where-Object Name -eq 1 |
-            Select-Object -ExpandProperty Value
-          $Helper.FilterType = $ResourceType
-          $Helper.Filters    = $HelpFilters
-          $Helper.Example   = "resource -filters 'tag:schedule=* * * * *','tag:description=nginx reverse proxy' -profiles production,development"
-          [PSCustomObject]@{
-            Providers     = $Helper.Providers
-            ResourceTypes = $Helper.ResourceTypes
-            FilterType    = $Helper.FilterType
-            Filters       = $Helper.Filters
-            Example       = $Helper.Example
-          }
+  [CmdletBinding()]
+  param (
+    $Provider,
+    $ResourceType,
+    $Service,
+    $Command
+  )
+  $Helper = @{
+    Providers     = (Get-Command -Name Get-ResourceHelp).Parameters['Provider'].Attributes.ValidValues
+    ResourceTypes = (Get-Command -Name Get-ResourceHelp).Parameters['ResourceType'].Attributes.ValidValues
+    FilterType    = $ResourceType
+  }
+  switch ($Provider) {
+    'AWS' {
+      $HelpFilters = aws $Service $Command help |
+        Select-String '^   \* "(.+)" -' | Select-Object -ExpandProperty Matches |
+        Select-Object -ExpandProperty Groups | Where-Object Name -eq 1 |
+        Select-Object -ExpandProperty Value
+      $Helper.Filters    = $HelpFilters
+      switch ($ResourceType) {
+        'VirtualMachine' {
+          $Helper.Example = "resource -t vm -f 'tag:schedule=* * * * *','tag:description=nginx reverse proxy' -p production,development"
+        }
+        'BlockStorage' {
+          $Helper.Example = "resource -t blocks -f 'size=200','tag:backup=0 */1 * * *' -p production, development"            
+        }
+      }
+    }
+  }
+  [PSCustomObject]@{
+    Providers     = $Helper.Providers
+    ResourceTypes = $Helper.ResourceTypes
+    FilterType    = $Helper.FilterType
+    Filters       = $Helper.Filters
+    Example       = $Helper.Example
+  }
 }

@@ -5,11 +5,11 @@ Function Approve-ResourceAction {
     $Resources,
     $Title,
     $Question,
-    [String[]]$Properties
+    [String[]]$Show
   )
   $Resources | Select-Object $Properties | Out-Host
   $Choices  = '&Yes', '&No'
-  $Decision = $Host.UI.PromptForChoice($Title, $Question, $Choices, 1)
+  $Decision = $Host.UI.PromptForChoice("$Title---------------------------", "$Question", $Choices, 1)
   if ($Decision -eq 0) { return $true }
   else { return $false }
 }
@@ -55,12 +55,12 @@ Function Find-Resource {
     [Switch]$Help
   )
   if ($Help) { Get-ResourceHelp $Provider $ResourceType; return }
-  
+
   switch ($Provider) {
     'AWS' {
       # use local profiles to search all accounts in aws
       if (-not $Profiles) { $SearchProfiles = aws configure list-profiles }
-      else { $SearchProfiles = $Profiles 
+      else { $SearchProfiles = $Profiles
       }
       $FilterString = New-Object System.Collections.Generic.List[String]
       foreach ($Filter in $Filters) {
@@ -100,12 +100,12 @@ Function Find-Resource {
             }
             Invoke-CommonGet @Search
           }
-          default { throw "ResourceType [$ResourceType] is currently not supported" }
+          default { throw "ResourceType [$Using:ResourceType] is currently not supported" }
         }
       } -ThrottleLimit 8
     }
     default { throw "Provider [$Provider] is currently not supported" }
-  }     
+  }
 }
 Set-Alias -Name resource -Value Find-Resource
 
@@ -119,10 +119,6 @@ Function Get-ResourceHelp {
     [ValidateSet([ResourceType])]
     [String]$ResourceType = 'VirtualMachine'
   )
-  $Helper = @{
-    Providers     = (Get-Command -Name Get-ResourceHelp).Parameters['Provider'].Attributes.ValidValues
-    ResourceTypes = (Get-Command -Name Get-ResourceHelp).Parameters['ResourceType'].Attributes.ValidValues
-  }
   switch ($Provider) {
     'AWS' {
       switch ($ResourceType) {
@@ -130,10 +126,10 @@ Function Get-ResourceHelp {
           $Hint = @{
             Provider = $Provider
             ResourceType = $ResourceType
-            Service = $Service
-            Command = $Command
+            Service = 'ec2'
+            Command = 'describe-instances'
           }
-          Invoke-CommonGetHelp @Hint          
+          Invoke-CommonGetHelp @Hint
         }
         default { throw "ResourceType [$ResourceType] is currently not supported" }
       }
@@ -208,7 +204,7 @@ Function Get-ResourceNetworkFlow {
               $NetworkInterfaceIds = 'interface-id=' + ($NetworkInterfaceIds -join ' || interface-id=')
               #$FilterPattern = "[..., $NetworkInterfaceIds, srcaddr=$Using:Source, dstaddr=$Using:Destination, srcport=$Using:SourcePort, dstport=$Using:DestinationPort, protocol=$Using:Protocol, bytes, start, end, action=$Using:Action, log-status=$Using:Status]"
               $LogGroupNames
-              aws --profile $Resource.Profile logs filter-log-events --log-group-name $LogGroupName --log-stream-names "$NetworkInterfaceId-all" --start-time $StartTime --query "events[1]" --output json 
+              aws --profile $Resource.Profile logs filter-log-events --log-group-name $LogGroupName --log-stream-names "$NetworkInterfaceId-all" --start-time $StartTime --query "events[1]" --output json
             }
           }
           return
@@ -255,22 +251,22 @@ Function Remove-Resource {
     Summary      = $true
   }
   $Resources = Find-Resource @SearchRequest
-  if (Approve-ResourceAction $Resources -Title 'Instance(s)' -Question 'Delete instance(s) listed?' -Properties Name, InstanceId) {
-    $Resources | ForEach-Object -Parallel {
-      $Resource = $_
-      if ($Resource.Provider -eq 'AWS') {
-        switch ($Resource.ResourceType) {
-          'VirtualMachine' {
-            aws --profile $Resource.Profile --region $Resource.Region ec2 terminate-instances --instance-ids $Resource.InstanceId --query "TerminatingInstances[]" --output json | ConvertFrom-Json
-            return
+  switch ($Provider) {
+    'AWS' {
+      if (Approve-ResourceAction $Resources -Title 'Virtual Machine(s)' -Question 'Delete vm(s) listed?' -Show Profile, Name, InstanceId) {
+        $Resources | ForEach-Object -Parallel {
+          $Resource = $_
+          switch ($Using:ResourceType) {
+            'VirtualMachine' {
+              aws --profile $Resource.Profile --region $Resource.Region ec2 terminate-instances --instance-ids $Resource.InstanceId --query "TerminatingInstances[]" --output json | ConvertFrom-Json
+              return
+            }
+            default { throw "ResourceType [$ResourceType] is currently not supported" }
           }
-          default { throw "ResourceType [$ResourceType] is currently not supported" }
-        }
+        } -ThrottleLimit 8
       }
-      if ($Provider -eq 'Azure') {
-        throw "Provider [$Provider] is currently not supported"
-      }
-    } -ThrottleLimit 8
+    }
+    default { throw "Provider [$Provider] is currently not supported" }
   }
 }
 Set-Alias -Name release -Value Remove-Resource
