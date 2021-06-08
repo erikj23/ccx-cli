@@ -85,7 +85,6 @@ Function Invoke-CommonGet {
     default { throw "Provider [$Provider] is currently not supported" }
   }
 }
-
 Function Invoke-CommonGetHelp {
   [CmdletBinding()]
   param (

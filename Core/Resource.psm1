@@ -3,13 +3,27 @@ Function Approve-ResourceAction {
   [CmdletBinding()]
   param (
     $Resources,
-    $Title,
-    $Question,
-    [String[]]$Show
+    [String]$Title,
+    [String]$Question,
+    [String[]]$Show,
+    [Switch]$NoPrompt
   )
-  $Resources | Select-Object $Properties | Out-Host
+  if ($NoPrompt.IsPresent) { return $true }
+  $Properties = @{}
+  foreach ($Resource in $Resources) {
+    foreach ($Property in $Show) {
+      if ($Property.StartsWith('tag:')) {
+        $Key = $Property.Split(':')[1]
+        $Properties[$Key] = $Resource.Tags.$Key
+      }
+      else {
+        $Properties[$Property] = $Resource.$Property
+      }
+    }
+    ([PSCustomObject]$Properties) | Out-Host
+  }
   $Choices  = '&Yes', '&No'
-  $Decision = $Host.UI.PromptForChoice("$Title---------------------------", "$Question", $Choices, 1)
+  $Decision = $Host.UI.PromptForChoice($Title, $Question, $Choices, 1)
   if ($Decision -eq 0) { return $true }
   else { return $false }
 }
